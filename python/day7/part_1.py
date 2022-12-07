@@ -1,6 +1,6 @@
 
-f = open("test_input.txt", "r")
-# f = open("input.txt", "r")
+# f = open("test_input.txt", "r")
+f = open("input.txt", "r")
 
 lines = f.readlines()
 
@@ -29,7 +29,8 @@ def parse_directory_listing(curr_directory, line_buffer):
 
     for line in line_buffer:
         if line[0] == "d":
-            res["directories"].append(line[4:])
+            if curr_directory != line[4:]:
+                res["directories"].append(line[4:])
         else:
             size, file = line.split(' ')
             res["size"] += int(size)
@@ -39,33 +40,32 @@ def parse_directory_listing(curr_directory, line_buffer):
 
 
 def calculate_directory_size(directories):
+    dir_values = []
 
-    size, sizes = new_dir_size(directories[0]["name"], {}, directories)
-    print(sizes)
+    for xx in directories:
+        value = compute_dirsize(xx)
+        dir_values.append(value)
 
-    return directories
+    return dir_values
 
 
-def new_dir_size(name, finals, directories):
-    size = 0
-    for directory in directories:
+# Adjusted from the youtube video here: https://www.youtube.com/watch?v=Io6AfTzadME
+# It helped me see what whas wrong and I copied the code and adjusted to my values
+def compute_dirsize(directory):
+    dirsize = directory["size"]
+    for ii in helper(directory["directories"], directories):
         if len(directory["directories"]) != 0:
-            dir_size, finals = new_dir_size(directory["name"], finals, helper(directory["name"], directory["directories"], directories))
-            size += dir_size
-        else:
-            size += int(directory["size"])
+            dirsize += compute_dirsize(ii)
 
-    finals[name] = size
-    return size, finals
+    return dirsize
 
 
-def helper(name, directory_names, directories):
+def helper(directory_names, directories):
     res = []
     for name in directory_names:
         for direc in directories:
             if name == direc["name"]:
                 res.append(direc)
-    #print("Helper", name, res)
     return res
 
 
@@ -95,14 +95,13 @@ if len(directory_listening_buffer) >= 0:
     directories.append(parse_directory_listing(current_directory, directory_listening_buffer))
     directory_listening_buffer = []
 
-print(directories)
-directories2 = calculate_directory_size(directories)
-# print(directories2)
+for item in directories: print(item)
 
-# total_size = 0
-#
-# for direc2 in directories2:
-#     if direc2[1] <= 100000:
-#         total_size += direc2[1]
-#
-# print("Part 1: ", total_size)
+dir_sizes = calculate_directory_size(directories)
+
+sum_total = 0
+for size in dir_sizes:
+    if size <= 100000:
+        sum_total += size
+
+print("Part 1: ", sum_total)
